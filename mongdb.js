@@ -47,10 +47,19 @@ MongoClient.connect(
 		// 	console.log(result);
 		// });
 
+		// db.collection("tasks")
+		// 	.find({ completed: false })
+		// 	.toArray((err, res) => {
+		// 		console.log(res);
+		// 	});
+
 		db.collection("tasks")
-			.find({ completed: false })
-			.toArray((err, res) => {
-				console.log(res);
+			.updateMany({ completed: false }, { $set: { completed: true } })
+			.then((res) => {
+				console.log(res.result);
+			})
+			.catch((err) => {
+				console.log(err);
 			});
 	}
 );

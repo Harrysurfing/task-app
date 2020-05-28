@@ -53,13 +53,20 @@ MongoClient.connect(
 		// 		console.log(res);
 		// 	});
 
+		// db.collection("tasks")
+		// 	.updateMany({ completed: false }, { $set: { completed: true } })
+		// 	.then((res) => {
+		// 		console.log(res.result);
+		// 	})
+		// 	.catch((err) => {
+		// 		console.log(err);
+		// 	});
+
 		db.collection("tasks")
-			.updateMany({ completed: false }, { $set: { completed: true } })
+			.deleteMany({ description: "task1" })
 			.then((res) => {
 				console.log(res.result);
 			})
-			.catch((err) => {
-				console.log(err);
-			});
+			.catch((err) => console.log(err));
 	}
 );

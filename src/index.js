@@ -2,6 +2,7 @@ const express = require("express");
 require("./db/mongoose");
 const User = require("./models/user");
 const Tasks = require("./models/tasks");
+const mongoose = require("mongoose");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,11 +15,56 @@ app.post("/users", (req, res) => {
 	user
 		.save()
 		.then(() => {
-			res.send(user);
+			res.status(201).send(user);
 		})
 		.catch((e) => {
 			res.status(400).send(e);
 		});
+});
+app.get("/users", (req, res) => {
+	User.find({})
+		.then((users) => {
+			res.send(users);
+		})
+		.catch((e) => res.status(500).send());
+});
+
+app.get("/users/:id", (req, res) => {
+	const id = req.params.id;
+	console.log(id);
+	User.findById(id)
+		.then((user) => {
+			if (!user) {
+				return res.status(404).send("no user found");
+			}
+			res.status(200).send(user);
+		})
+		.catch((e) => {
+			res.status(500).send(e);
+		});
+});
+
+app.get("/tasks", (req, res) => {
+	Tasks.find({})
+		.then((tasks) => {
+			res.send(tasks);
+		})
+		.catch((e) => res.status(400).send(e));
+});
+
+app.get("/tasks/:id", (req, res) => {
+	const id = req.params.id;
+	if (!mongoose.Types.ObjectId.isValid(id)) {
+		return res.status(400).send("not a valid id");
+	}
+	Tasks.findById(id)
+		.then((task) => {
+			if (!task) {
+				return res.status(404).send("no task found");
+			}
+			res.send(task);
+		})
+		.catch((e) => res.status(500).send(e));
 });
 
 app.post("/tasks", (req, res) => {
@@ -27,7 +73,7 @@ app.post("/tasks", (req, res) => {
 	task
 		.save()
 		.then(() => {
-			res.send(task);
+			res.status(201).send(task);
 		})
 		.catch((e) => {
 			res.status(400).send(e);

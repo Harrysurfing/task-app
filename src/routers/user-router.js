@@ -57,14 +57,27 @@ UserRouter.patch("/users/:id", async (req, res) => {
 	}
 
 	try {
-		const updatedUser = await User.findByIdAndUpdate(id, contentToUpdate, {
-			new: true,
-			runValidators: true,
-		});
-		if (!updatedUser) {
-			return res.status(404).send();
+		const user = await User.findById(id);
+		if (!user) {
+			return res.status(404).send("user not found");
 		}
-		res.send(updatedUser);
+
+		Object.keys(contentToUpdate).forEach((field) => {
+			user[field] = contentToUpdate[field];
+		});
+
+		await user.save();
+
+		res.send(user);
+
+		// const updatedUser = await User.findByIdAndUpdate(id, contentToUpdate, {
+		// 	new: true,
+		// 	runValidators: true,
+		// });
+		// if (!updatedUser) {
+		// 	return res.status(404).send();
+		// }
+		// res.send(updatedUser);
 	} catch (e) {
 		console.log(e);
 		res.status(400).send(e);

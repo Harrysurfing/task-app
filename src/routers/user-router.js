@@ -4,17 +4,35 @@ const mongoose = require("mongoose");
 
 const UserRouter = new express.Router();
 
+//create user
 UserRouter.post("/users", async (req, res) => {
 	const user = new User(req.body);
 
 	try {
+		const token = await user.generateAuthToken();
 		await user.save();
-		res.status(201).send(user);
+		res.status(201).send({ user, token });
 	} catch (e) {
 		console.log(e);
 		res.status(400).send(e);
 	}
 });
+
+//user login
+UserRouter.post("/users/login", async (req, res) => {
+	const { email, password } = req.body;
+
+	try {
+		const user = await User.findByCredentials(email, password);
+		const token = await user.generateAuthToken();
+
+		res.send({ user, token });
+	} catch (e) {
+		res.status(400).send();
+	}
+});
+
+//get all users
 UserRouter.get("/users", async (req, res) => {
 	try {
 		const users = await User.find({});
@@ -69,15 +87,6 @@ UserRouter.patch("/users/:id", async (req, res) => {
 		await user.save();
 
 		res.send(user);
-
-		// const updatedUser = await User.findByIdAndUpdate(id, contentToUpdate, {
-		// 	new: true,
-		// 	runValidators: true,
-		// });
-		// if (!updatedUser) {
-		// 	return res.status(404).send();
-		// }
-		// res.send(updatedUser);
 	} catch (e) {
 		console.log(e);
 		res.status(400).send(e);

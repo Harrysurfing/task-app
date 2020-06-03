@@ -1,6 +1,7 @@
 const express = require("express");
 const User = require("../models/user");
 const mongoose = require("mongoose");
+const auth = require("../middleware/auth");
 
 const UserRouter = new express.Router();
 
@@ -33,12 +34,43 @@ UserRouter.post("/users/login", async (req, res) => {
 });
 
 //get all users
-UserRouter.get("/users", async (req, res) => {
+UserRouter.get("/users", auth, async (req, res) => {
 	try {
 		const users = await User.find({});
 		res.send(users);
 	} catch (e) {
 		res.status(500).send(e);
+	}
+});
+
+//get logged in user
+UserRouter.get("/users/me", auth, async (req, res) => {
+	res.send(req.user);
+});
+
+//log out user
+UserRouter.post("/users/logout", auth, async (req, res) => {
+	try {
+		req.user.tokens = req.user.tokens.filter((el) => {
+			return el.token !== req.token;
+		});
+
+		await req.user.save();
+		res.send("logged out!");
+	} catch (e) {
+		res.status(500).send();
+	}
+});
+
+//log out all devieces
+UserRouter.post("/users/logoutall", auth, async (req, res) => {
+	try {
+		req.user.tokens = [];
+		await req.user.save();
+		res.send("All devieces are logged out!");
+	} catch (e) {
+		console.log(e);
+		res.status(500).send();
 	}
 });
 
@@ -71,7 +103,7 @@ UserRouter.patch("/users/:id", async (req, res) => {
 		return res.status(400).send("invalid update field");
 	}
 	if (!mongoose.Types.ObjectId.isValid(id)) {
-		return res.status(400).send("invalide id");
+		return res.status(400).send("invalid id");
 	}
 
 	try {

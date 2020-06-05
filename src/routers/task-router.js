@@ -1,25 +1,27 @@
 const express = require("express");
 const Tasks = require("../models/tasks");
 const mongoose = require("mongoose");
+const auth = require("../middleware/auth");
 
 const TaskRouter = new express.Router();
 
-TaskRouter.get("/tasks", async (req, res) => {
+TaskRouter.get("/tasks", auth, async (req, res) => {
 	try {
-		const tasks = await Tasks.find({});
+		const tasks = await Tasks.find({ owner: req.user._id });
 		res.send(tasks);
 	} catch (e) {
 		res.status(500).send(e);
 	}
 });
-TaskRouter.get("/tasks/:id", async (req, res) => {
+TaskRouter.get("/tasks/:id", auth, async (req, res) => {
 	const id = req.params.id;
 	if (!mongoose.Types.ObjectId.isValid(id)) {
 		return res.status(400).send("not a valid id");
 	}
 
 	try {
-		const task = await Tasks.findById(id);
+		// const task = await Tasks.findById(id);
+		const task = await Tasks.findOne({ _id: id, owner: req.user._id });
 		if (!task) {
 			return res.status(404).send("no task found");
 		}
@@ -28,7 +30,7 @@ TaskRouter.get("/tasks/:id", async (req, res) => {
 		res.status(500).send();
 	}
 });
-TaskRouter.patch("/tasks/:id", async (req, res) => {
+TaskRouter.patch("/tasks/:id", auth, async (req, res) => {
 	const id = req.params.id;
 	if (!mongoose.Types.ObjectId.isValid(id)) {
 		return res.status(400).send("invalid id");
@@ -43,7 +45,7 @@ TaskRouter.patch("/tasks/:id", async (req, res) => {
 		return res.status(400).send("invalid update field");
 	}
 	try {
-		const task = await Tasks.findById(id);
+		const task = await Tasks.findOne({ _id: id, owner: req.user._id });
 		if (!task) {
 			return res.status(404).send("task not found");
 		}
@@ -53,21 +55,18 @@ TaskRouter.patch("/tasks/:id", async (req, res) => {
 
 		await task.save();
 
-		// const updatedTask = await Tasks.findByIdAndUpdate(id, contentToUpdate, {
-		// 	new: true,
-		// 	runValidators: true,
-		// });
-
-		// if (!updatedTask) {
-		// 	return res.status(404).send("no task found");
-		// }
 		res.send(task);
 	} catch (e) {
 		res.status(500).send();
 	}
 });
-TaskRouter.post("/tasks", async (req, res) => {
-	const task = new Tasks(req.body);
+
+TaskRouter.post("/tasks", auth, async (req, res) => {
+	// const task = new Tasks(req.body);
+	const task = new Tasks({
+		...req.body,
+		owner: req.user._id,
+	});
 
 	try {
 		await task.save();
@@ -76,17 +75,19 @@ TaskRouter.post("/tasks", async (req, res) => {
 		res.status(400).send(e);
 	}
 });
-TaskRouter.delete("/tasks/:id", async (req, res) => {
+
+TaskRouter.delete("/tasks/:id", auth, async (req, res) => {
 	const id = req.params.id;
 	if (!mongoose.Types.ObjectId.isValid(id)) {
 		return res.status(400).send("invalide id");
 	}
 
 	try {
-		const task = await Tasks.findByIdAndDelete(id);
+		const task = await Tasks.findOneAndDelete({ _id: id, owner: req.user._id });
 		if (!task) {
 			return res.status(404).send("no task found");
 		}
+
 		res.send(task);
 	} catch (e) {
 		res.status(500).send();

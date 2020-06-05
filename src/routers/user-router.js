@@ -92,9 +92,10 @@ UserRouter.get("/users/:id", async (req, res) => {
 	}
 });
 
-UserRouter.patch("/users/:id", async (req, res) => {
+//update user
+UserRouter.patch("/users/me", auth, async (req, res) => {
 	const allowedUpdate = ["name", "age", "password", "email"];
-	const id = req.params.id;
+
 	const contentToUpdate = req.body;
 
 	if (
@@ -102,41 +103,25 @@ UserRouter.patch("/users/:id", async (req, res) => {
 	) {
 		return res.status(400).send("invalid update field");
 	}
-	if (!mongoose.Types.ObjectId.isValid(id)) {
-		return res.status(400).send("invalid id");
-	}
 
 	try {
-		const user = await User.findById(id);
-		if (!user) {
-			return res.status(404).send("user not found");
-		}
-
 		Object.keys(contentToUpdate).forEach((field) => {
-			user[field] = contentToUpdate[field];
+			req.user[field] = contentToUpdate[field];
 		});
 
-		await user.save();
+		await req.user.save();
 
-		res.send(user);
+		res.send(req.user);
 	} catch (e) {
 		console.log(e);
 		res.status(400).send(e);
 	}
 });
 
-UserRouter.delete("/users/:id", async (req, res) => {
-	const id = req.params.id;
-	if (!mongoose.Types.ObjectId.isValid(id)) {
-		return res.status(400).send("invalide id");
-	}
-
+UserRouter.delete("/users/me", auth, async (req, res) => {
 	try {
-		const user = await User.findByIdAndDelete(id);
-		if (!user) {
-			return res.status(404).send("no user found");
-		}
-		res.send(user);
+		await req.user.remove();
+		res.send(req.user);
 	} catch (e) {
 		res.status(500).send();
 	}

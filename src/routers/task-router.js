@@ -6,13 +6,35 @@ const auth = require("../middleware/auth");
 const TaskRouter = new express.Router();
 
 TaskRouter.get("/tasks", auth, async (req, res) => {
+	const match = {};
+	const sort = {};
+	if (req.query.completed) {
+		match.completed = req.query.completed === "true";
+	}
+	if (req.query.sortBy) {
+		const parts = req.query.sortBy.split(":");
+		sort[parts[0]] = parts[1] === "asc" ? 1 : -1;
+	}
+
 	try {
-		const tasks = await Tasks.find({ owner: req.user._id });
-		res.send(tasks);
+		// console.log(req.user);
+		await req.user
+			.populate({
+				path: "tasks",
+				match: match,
+				sort: sort,
+				limit: parseInt(req.query.limit),
+				skip: parseInt(req.query.skip),
+			})
+			.execPopulate();
+
+		res.send(req.user.tasks);
 	} catch (e) {
-		res.status(500).send(e);
+		console.log(e);
+		res.status(500).send();
 	}
 });
+
 TaskRouter.get("/tasks/:id", auth, async (req, res) => {
 	const id = req.params.id;
 	if (!mongoose.Types.ObjectId.isValid(id)) {

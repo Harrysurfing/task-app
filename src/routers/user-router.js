@@ -3,6 +3,7 @@ const User = require("../models/user");
 const mongoose = require("mongoose");
 const auth = require("../middleware/auth");
 const multer = require("multer");
+const sharp = require("sharp");
 
 const UserRouter = new express.Router();
 
@@ -146,7 +147,11 @@ UserRouter.post(
 	auth,
 	upload.single("avatar"),
 	async (req, res) => {
-		req.user.avatar = req.file.buffer;
+		const buffer = await sharp(req.file.buffer)
+			.resize(250, 250)
+			.png()
+			.toBuffer();
+		req.user.avatar = buffer;
 		await req.user.save();
 		res.send();
 	},
